@@ -36,6 +36,35 @@ npm i
 npm run dev
 ```
 
+## Local Development Setup
+
+To run the application locally, you'll need to start both the main application and the proxy server:
+
+### 1. Start the Main Application
+
+```sh
+# Install dependencies (if not already done)
+npm install
+
+# Start the development server
+npm run dev
+```
+
+The main application will be available at `http://localhost:5173` (or the port shown in your terminal).
+
+### 2. Start the Simple Proxy Server
+
+In a separate terminal window/tab, start the proxy server:
+
+```sh
+# Start the simple proxy server
+node simple-proxy.js
+```
+
+The proxy server will handle API requests and CORS issues for the application.
+
+**Note**: Both servers need to be running simultaneously for the application to work properly.
+
 **Edit a file directly in GitHub**
 
 - Navigate to the desired file(s).

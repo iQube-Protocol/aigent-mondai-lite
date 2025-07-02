@@ -1,24 +1,23 @@
-
 import { toast } from 'sonner';
 import { KBAIKnowledgeItem, KBAIQueryOptions, ConnectionStatus, getKBAIDirectService } from './index';
 import { getFallbackItems } from './utils/fallbackData';
 import { CacheManager } from './utils/cacheManager';
 
 /**
- * Service for communicating with KBAI MCP server via direct API connection
+ * Service for communicating with KBAI MCP server via mcp-remote proxy
  */
 export class KBAIMCPService {
   private connectionStatus: ConnectionStatus = 'disconnected';
   private readonly cacheManager: CacheManager;
   private lastErrorTime: number = 0;
-  private errorCooldown: number = 30000; // 30 second cooldown between error notifications
+  private errorCooldown: number = 30000;
   
   constructor() {
     this.cacheManager = new CacheManager();
   }
 
   /**
-   * Fetch knowledge items from KBAI MCP server
+   * Fetch knowledge items from KBAI MCP server via local proxy
    */
   async fetchKnowledgeItems(options: KBAIQueryOptions = {}): Promise<KBAIKnowledgeItem[]> {
     try {
@@ -33,7 +32,7 @@ export class KBAIMCPService {
       this.connectionStatus = 'connecting';
       console.log('Fetching knowledge items from KBAI MCP server with options:', options);
       
-      // Use the direct KBAI service instead of Supabase edge function
+      // Use the direct KBAI service for now (which has fallback logic)
       const directService = getKBAIDirectService();
       const items = await directService.fetchKnowledgeItems(options);
       
@@ -51,39 +50,27 @@ export class KBAIMCPService {
       
       return items;
     } catch (error) {
+      console.error('Failed to fetch KBAI knowledge items:', error);
       this.connectionStatus = 'error';
-      console.error('Failed to fetch KBAI knowledge:', error);
       
-      // Only show toast error if we haven't shown one recently
+      // Show error notification with cooldown
       const now = Date.now();
       if (now - this.lastErrorTime > this.errorCooldown) {
+        toast.error('KBAI service temporarily unavailable. Using fallback knowledge.');
         this.lastErrorTime = now;
-        toast.error('Failed to connect to knowledge base', {
-          description: 'Using fallback knowledge items instead'
-        });
       }
       
       return getFallbackItems();
     }
   }
-  
-  /**
-   * Get connection status
-   */
+
+
   getConnectionStatus(): ConnectionStatus {
     return this.connectionStatus;
   }
-  
-  /**
-   * Reset connection status and cache
-   */
-  reset(): void {
-    this.connectionStatus = 'disconnected';
+
+  clearCache(): void {
     this.cacheManager.clearCache();
-    
-    // Also reset the direct service
-    const directService = getKBAIDirectService();
-    directService.reset();
   }
 }
 
